@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><style>body{margin:0;background:#000}</style></head>
+<body>
+<canvas id="c" width="512" height="512"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+function draw(size){
+  c.width=c.height=size;
+  ctx.fillStyle='#2C3E50';
+  const r=size*0.2;
+  ctx.beginPath();
+  ctx.moveTo(r,0);ctx.lineTo(size-r,0);ctx.quadraticCurveTo(size,0,size,r);
+  ctx.lineTo(size,size-r);ctx.quadraticCurveTo(size,size,size-r,size);
+  ctx.lineTo(r,size);ctx.quadraticCurveTo(0,size,0,size-r);
+  ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);
+  ctx.fill();
+  ctx.font=size*0.55+'px serif';ctx.textAlign='center';
+  ctx.fillText('📋',size/2,size*0.62);
+  ctx.fillStyle='rgba(255,255,255,0.75)';
+  ctx.font='bold '+size*0.1+'px PingFang SC,Microsoft YaHei,sans-serif';
+  ctx.fillText('工作秘书',size/2,size*0.88);
+}
+draw(512);
+document.getElementById('c').toBlob(b=>{
+  const a=document.createElement('a');a.download='icon-512.png';
+  a.href=URL.createObjectURL(b);a.click();
+},'image/png');
+setTimeout(()=>{draw(192);c.toBlob(b=>{
+  const a=document.createElement('a');a.download='icon-192.png';
+  a.href=URL.createObjectURL(b);a.click();
+},'image/png');},500);
+</script></body></html>

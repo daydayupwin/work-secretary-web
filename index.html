@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="工作秘书">
+    <meta name="theme-color" content="#2C3E50">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <title>工作秘书</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="api-config.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 移动端顶部导航栏 -->
+        <header class="mobile-header">
+            <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+            <h1>工作秘书</h1>
+            <button class="settings-btn" onclick="openSettingsModal()">⚙️</button>
+        </header>
+
+        <!-- 侧边栏遮罩（移动端） -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- 侧边栏导航 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <span class="logo-icon">📋</span>
+                <h1>工作秘书</h1>
+                <button class="sidebar-close" onclick="closeSidebar()">×</button>
+            </div>
+            <nav>
+                <a href="#" class="nav-item active" data-tab="schedule">
+                    <span class="nav-icon">📅</span>
+                    <span>日程安排</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="tasks">
+                    <span class="nav-icon">📋</span>
+                    <span>重点工作</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="documents">
+                    <span class="nav-icon">✍️</span>
+                    <span>文本生成</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>工作看板</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn-sidebar-action" onclick="openSettingsModal()">⚙️ AI 设置</button>
+                <button class="btn-sidebar-action" onclick="exportData()">📦 导出备份</button>
+                <button class="btn-sidebar-action" onclick="importData()">📂 导入备份</button>
+                <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+                <p class="sidebar-version">v2.0 · 数据自动保存</p>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部信息栏（桌面端） -->
+            <header class="top-bar">
+                <div class="date-info">
+                    <h2 id="currentDate"></h2>
+                    <p id="currentTime"></p>
+                </div>
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <span class="stat-num" id="todayTasks">0</span>
+                        <span class="stat-label">今日待办</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="urgentTasks">0</span>
+                        <span class="stat-label">紧急事项</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="completedWeek">0</span>
+                        <span class="stat-label">本周完成</span>
+                    </div>
+                </div>
+                <button class="btn-icon" onclick="openSettingsModal()" title="AI 设置">⚙️</button>
+            </header>
+
+            <!-- 日程安排 Tab -->
+            <section class="tab-content active" id="tab-schedule">
+                <div class="section-header">
+                    <h3>📅 日程安排</h3>
+                    <div class="view-tabs">
+                        <button class="view-btn active" data-view="day">日</button>
+                        <button class="view-btn" data-view="week">周</button>
+                        <button class="view-btn" data-view="all">全部</button>
+                    </div>
+                    <button class="btn-primary" onclick="openScheduleModal()">+ 新增</button>
+                </div>
+                <div class="schedule-container" id="scheduleContainer"></div>
+            </section>
+
+            <!-- 重点工作 Tab -->
+            <section class="tab-content" id="tab-tasks">
+                <div class="section-header">
+                    <h3>📋 重点工作</h3>
+                    <div class="filter-tabs">
+                        <button class="filter-btn active" data-filter="all">全部</button>
+                        <button class="filter-btn" data-filter="urgent-important">紧急重要</button>
+                        <button class="filter-btn" data-filter="important">重要</button>
+                        <button class="filter-btn" data-filter="completed">已完成</button>
+                    </div>
+                    <button class="btn-primary" onclick="openTaskModal()">+ 新增</button>
+                </div>
+                <div class="tasks-container" id="tasksContainer"></div>
+            </section>
+
+            <!-- 文本生成 Tab -->
+            <section class="tab-content" id="tab-documents">
+                <div class="section-header">
+                    <h3>✍️ 文本生成</h3>
+                </div>
+                <div class="doc-type-grid" id="docTypeGrid">
+                    <button class="doc-type-card active" data-type="notification">
+                        <span class="doc-icon">📢</span>
+                        <span>工作通知</span>
+                    </button>
+                    <button class="doc-type-card" data-type="report">
+                        <span class="doc-icon">📑</span>
+                        <span>工作汇报</span>
+                    </button>
+                    <button class="doc-type-card" data-type="email">
+                        <span class="doc-icon">📧</span>
+                        <span>工作邮件</span>
+                    </button>
+                    <button class="doc-type-card" data-type="summary">
+                        <span class="doc-icon">📝</span>
+                        <span>会议总结</span>
+                    </button>
+                    <button class="doc-type-card" data-type="plan">
+                        <span class="doc-icon">🗓️</span>
+                        <span>工作计划</span>
+                    </button>
+                    <button class="doc-type-card" data-type="free">
+                        <span class="doc-icon">✨</span>
+                        <span>自由生成</span>
+                    </button>
+                </div>
+                <div class="document-workspace">
+                    <div class="ai-status-bar" id="aiStatusBar">
+                        <span id="aiStatusText">⚡ AI 未配置，将使用模板生成</span>
+                        <button onclick="openSettingsModal()">去配置</button>
+                    </div>
+                    <div class="input-area">
+                        <label class="input-label">描述你的需求（越详细效果越好）</label>
+                        <textarea id="docInput" placeholder="例如：通知各部门参加周一下午2点的品牌工作领导小组会议，地点福临门大厦3007室，请提前安排好当日工作..."></textarea>
+                        <div class="ai-actions">
+                            <button class="btn-ai" onclick="generateDocument()" id="generateBtn">
+                                <span id="generateBtnText">✨ AI 生成</span>
+                            </button>
+                            <button class="btn-secondary" onclick="clearDocument()">清空</button>
+                        </div>
+                    </div>
+                    <div class="output-area" id="docOutput">
+                        <p class="placeholder-text">🤖 生成的内容将显示在这里</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 工作看板 Tab -->
+            <section class="tab-content" id="tab-dashboard">
+                <div class="section-header">
+                    <h3>📊 工作看板</h3>
+                    <button class="btn-secondary" onclick="exportWeekReport()">📊 导出周报</button>
+                </div>
+                <div class="dashboard-container" id="dashboardContainer"></div>
+            </section>
+        </main>
+
+        <!-- 底部导航栏（移动端） -->
+        <nav class="bottom-nav" id="bottomNav">
+            <a class="bottom-nav-item active" data-tab="schedule">
+                <span>📅</span>
+                <span>日程</span>
+            </a>
+            <a class="bottom-nav-item" data-tab="tasks">
+                <span>📋</span>
+                <span>工作</span>
+            </a>
+            <a class="bottom-nav-item" data-tab="documents">
+                <span>✍️</span>
+                <span>生成</span>
+            </a>
+            <a class="bottom-nav-item" data-tab="dashboard">
+                <span>📊</span>
+                <span>看板</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- AI 设置弹窗 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ AI 设置</h3>
+                <button class="modal-close" onclick="closeModal('settingsModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>AI 服务商</label>
+                    <select id="settingsProvider" onchange="updateProviderHint()">
+                        <option value="qianwen">通义千问（推荐·国内稳定）</option>
+                        <option value="deepseek">DeepSeek（国内·价格极低）</option>
+                        <option value="openai">OpenAI GPT（需科学上网）</option>
+                        <option value="wenxin">文心一言（百度）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <div class="api-key-row">
+                        <input type="password" id="settingsApiKey" placeholder="请输入 API Key">
+                        <button class="btn-toggle-eye" onclick="toggleApiKeyVisibility()">👁️</button>
+                    </div>
+                    <p class="form-hint" id="providerHint">获取地址：<a href="https://dashscope.aliyuncs.com" target="_blank">阿里云百炼平台 dashscope.aliyuncs.com</a></p>
+                </div>
+                <div class="form-group" id="modelGroup">
+                    <label>模型选择</label>
+                    <select id="settingsModel">
+                        <option value="qwen-plus">qwen-plus（均衡推荐）</option>
+                        <option value="qwen-max">qwen-max（效果最强）</option>
+                        <option value="qwen-turbo">qwen-turbo（速度最快）</option>
+                    </select>
+                </div>
+                <div class="ai-test-area">
+                    <button class="btn-secondary" onclick="testAiConnection()" id="testBtn">🔌 测试连接</button>
+                    <span id="testResult"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('settingsModal')">取消</button>
+                <button class="btn-primary" onclick="saveSettings()">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日程弹窗 -->
+    <div class="modal" id="scheduleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新增日程</h3>
+                <button class="modal-close" onclick="closeModal('scheduleModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>日程标题 *</label>
+                    <input type="text" id="scheduleTitle" placeholder="请输入日程标题">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>开始时间 *</label>
+                        <input type="datetime-local" id="scheduleStart">
+                    </div>
+                    <div class="form-group">
+                        <label>结束时间</label>
+                        <input type="datetime-local" id="scheduleEnd">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>日程类型</label>
+                    <select id="scheduleType">
+                        <option value="meeting">会议</option>
+                        <option value="deadline">截止日期</option>
+                        <option value="reminder">提醒</option>
+                        <option value="event">活动</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>备注说明</label>
+                    <textarea id="scheduleNote" rows="2" placeholder="可选填"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('scheduleModal')">取消</button>
+                <button class="btn-primary" onclick="saveSchedule()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任务弹窗 -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新增工作任务</h3>
+                <button class="modal-close" onclick="closeModal('taskModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>任务标题 *</label>
+                    <input type="text" id="taskTitle" placeholder="请输入任务标题">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>所属项目</label>
+                        <select id="taskProject">
+                            <option value="品牌管理">品牌管理</option>
+                            <option value="特渠业务">特渠业务</option>
+                            <option value="保供任务">保供任务</option>
+                            <option value="协同工作">协同工作</option>
+                            <option value="区域合作">区域合作</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>优先级</label>
+                        <select id="taskPriority">
+                            <option value="urgent-important">🔴 重要且紧急</option>
+                            <option value="important">🟡 重要不紧急</option>
+                            <option value="urgent">🟠 紧急不重要</option>
+                            <option value="normal">⚪ 普通</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>截止日期</label>
+                    <input type="date" id="taskDeadline">
+                </div>
+                <div class="form-group">
+                    <label>任务描述</label>
+                    <textarea id="taskDesc" rows="3" placeholder="详细描述任务内容..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('taskModal')">取消</button>
+                <button class="btn-primary" onclick="saveTask()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // 注册 Service Worker（PWA 离线支持）
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('SW registered'))
+                    .catch(e => console.log('SW error', e));
+            });
+        }
+    </script>
+</body>
+</html>
